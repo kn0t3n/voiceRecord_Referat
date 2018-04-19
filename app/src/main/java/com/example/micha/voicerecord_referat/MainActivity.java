@@ -21,9 +21,9 @@ public class MainActivity extends AppCompatActivity {
 
     private Button btnRecord, btnStop, btnPlay, btnStopPlayRecording;
     String AudioSavePathInDevice = null;
-    MediaRecorder mediaRecorder ;
+    MediaRecorder mediaRecorder;
     public static final int RequestPermissionCode = 1;
-    MediaPlayer mediaPlayer ;
+    MediaPlayer mediaPlayer;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -42,7 +42,23 @@ public class MainActivity extends AppCompatActivity {
         btnRecord.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
+                if (checkPermission()) {
+                    AudioSavePathInDevice = Environment.getExternalStorageDirectory().getAbsolutePath() + "/" + "AudioRecording.3pg";
+                    mediaRecorderReady();
 
+                    try {
+                        mediaRecorder.prepare();
+                        mediaRecorder.start();
+                        btnRecord.setEnabled(false);
+                        btnStop.setEnabled(true);
+                        Toast.makeText(MainActivity.this, "Recording started", Toast.LENGTH_SHORT).show();
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+
+                } else {
+                    requestPermission();
+                }
 
             }
         });
@@ -51,8 +67,12 @@ public class MainActivity extends AppCompatActivity {
         btnStop.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
+                mediaRecorder.stop();
 
-
+                btnStop.setEnabled(false);
+                btnPlay.setEnabled(true);
+                btnRecord.setEnabled(true);
+                btnStopPlayRecording.setEnabled(true);
 
             }
         });
@@ -60,8 +80,20 @@ public class MainActivity extends AppCompatActivity {
         btnPlay.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) throws IllegalArgumentException, SecurityException, IllegalStateException {
+                btnStop.setEnabled(false);
+                btnRecord.setEnabled(false);
+                btnStopPlayRecording.setEnabled(true);
 
+                mediaPlayer = new MediaPlayer();
 
+                try {
+                    mediaPlayer.setDataSource(AudioSavePathInDevice);
+                    mediaPlayer.prepare();
+                    mediaPlayer.start();
+                    Toast.makeText(MainActivity.this, "Record Playing", Toast.LENGTH_LONG).show();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
 
             }
         });
@@ -69,13 +101,30 @@ public class MainActivity extends AppCompatActivity {
         btnStopPlayRecording.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
+                btnStop.setEnabled(false);
+                btnRecord.setEnabled(true);
+                btnStopPlayRecording.setEnabled(false);
+                btnPlay.setEnabled(true);
 
+                if (mediaPlayer != null) {
+                    mediaPlayer.stop();
+                    mediaPlayer.release();
 
+                    mediaRecorderReady();
+                }
 
             }
         });
 
 
+    }
+
+    private void mediaRecorderReady() {
+        mediaRecorder = new MediaRecorder();
+        mediaRecorder.setAudioSource(MediaRecorder.AudioSource.MIC);
+        mediaRecorder.setOutputFormat(MediaRecorder.OutputFormat.THREE_GPP);
+        mediaRecorder.setAudioEncoder(MediaRecorder.AudioEncoder.AMR_NB);
+        mediaRecorder.setOutputFile(AudioSavePathInDevice);
     }
 
     private void requestPermission() {
@@ -96,9 +145,8 @@ public class MainActivity extends AppCompatActivity {
                     if (StoragePermission && RecordPermission) {
 
                         Toast.makeText(MainActivity.this, "Permission Granted", Toast.LENGTH_LONG).show();
-                    }
-                    else {
-                        Toast.makeText(MainActivity.this,"Permission Denied",Toast.LENGTH_LONG).show();
+                    } else {
+                        Toast.makeText(MainActivity.this, "Permission Denied", Toast.LENGTH_LONG).show();
 
                     }
                 }
